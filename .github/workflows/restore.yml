@@ -8,6 +8,12 @@ on:
         default: github_token
         type: choice
         options: [github_token, app]
+      project:
+        description: consumer project to restore
+        required: true
+        default: src/Proto.Consumer.csproj
+        type: choice
+        options: [src/Proto.Consumer.csproj, src-public/Proto.Consumer.Public.csproj]
 permissions:
   contents: read
   packages: read
@@ -25,6 +31,7 @@ jobs:
         with:
           app-id: ${{ secrets.PROTO_PKG_READER_APP_ID }}
           private-key: ${{ secrets.PROTO_PKG_READER_PRIVATE_KEY }}
-      - run: dotnet restore src/Proto.Consumer.csproj --configfile nuget.config -v normal --no-cache --force
+      - run: dotnet restore "$PROJECT" --configfile nuget.config -v normal --no-cache --force
         env:
+          PROJECT: ${{ inputs.project }}
           PROTO_FEED_TOKEN: ${{ inputs.credential == 'app' && steps.app.outputs.token || secrets.GITHUB_TOKEN }}
