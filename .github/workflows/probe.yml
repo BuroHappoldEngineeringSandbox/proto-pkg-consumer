@@ -1,0 +1,24 @@
+name: probe
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.PROTO_PKG_READER_APP_ID }}
+          private-key: ${{ secrets.PROTO_PKG_READER_PRIVATE_KEY }}
+      - env:
+          TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          for u in \
+            "https://nuget.pkg.github.com/BuroHappoldEngineeringSandbox/index.json" \
+            "https://nuget.pkg.github.com/BuroHappoldEngineeringSandbox/download/proto.dummy/index.json"; do
+            echo "=== GET $u"
+            curl -sS -u "x-access-token:${TOKEN}" -D - -o body.txt "$u" | grep -viE '^(set-cookie|authorization)'
+            echo "--- body (first 1000 bytes):"
+            head -c 1000 body.txt; echo
+          done
