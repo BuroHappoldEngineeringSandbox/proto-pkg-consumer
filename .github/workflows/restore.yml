@@ -1,0 +1,30 @@
+name: restore
+on:
+  workflow_dispatch:
+    inputs:
+      credential:
+        description: github_token or app
+        required: true
+        default: github_token
+        type: choice
+        options: [github_token, app]
+permissions:
+  contents: read
+  packages: read
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - id: app
+        if: inputs.credential == 'app'
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.PROTO_PKG_READER_APP_ID }}
+          private-key: ${{ secrets.PROTO_PKG_READER_PRIVATE_KEY }}
+      - run: dotnet restore src/Proto.Consumer.csproj --configfile nuget.config -v normal --no-cache --force
+        env:
+          PROTO_FEED_TOKEN: ${{ inputs.credential == 'app' && steps.app.outputs.token || secrets.GITHUB_TOKEN }}
